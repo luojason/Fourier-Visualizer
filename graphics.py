@@ -221,7 +221,10 @@ class GraphWin(tk.Canvas):
         self.items = []
         self.mouseX = None
         self.mouseY = None
-        self.bind("<Button-1>", self._onClick)
+        self.bind("<Motion>", self._onClick)
+        self.bind("<Button-1>", self._startMouse)
+        self.bind("<ButtonRelease-1>", self._stopMouse)
+        self._mouseTracking = False
         self.bind_all("<Key>", self._onKey)
         self.height = int(height)
         self.width = int(width)
@@ -232,6 +235,12 @@ class GraphWin(tk.Canvas):
         master.lift()
         self.lastKey = ""
         if autoflush: _root.update()
+
+    #special modifications to allow for continuous mouse tracking
+    def _startMouse(self, e):
+       self._mouseTracking = True
+       self._onClick(e)
+    def _stopMouse(self, e): self._mouseTracking = False
 
     def __repr__(self):
         if self.isClosed():
@@ -381,6 +390,7 @@ class GraphWin(tk.Canvas):
         self._mouseCallback = func
         
     def _onClick(self, e):
+        if not self._mouseTracking: return #add ability for continuous mouse tracking
         self.mouseX = e.x
         self.mouseY = e.y
         if self._mouseCallback:
