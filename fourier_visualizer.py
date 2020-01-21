@@ -3,6 +3,7 @@ import math
 import cmath
 
 #parameters to modify framerate, period of the function, etc
+framerate = 60
 dtheta = .01 #theta displacement, in radians
 
 def c2p(c):
@@ -172,24 +173,28 @@ class DFT_Renderer:
 if __name__ == '__main__':
     win = g.GraphWin('Fourier Series Visualizer', 800, 800, autoflush=False)
     win.setCoords(-500, -500, 500, 500)
-    info = g.Text(g.Point(0,470), 'Click to set a vertex. Press any button and click to finish.')
+    info = g.Text(g.Point(0,470), 'Click/Drag to set a vertex. Press any button and click to finish.\n'
+                  'At least one vertex must be set before finishing')
     info.draw(win)
-    pt_list = []
-    poly = g.Polygon(pt_list)
+    pt_list = [win.getMouse()]
+    prev_pt = pt_list[0]
     while True: #grabbing sample points
         pt = win.getMouse()
         if win.checkKey() != '': break
         pt_list.append(pt)
-        poly.undraw()
-        poly = g.Polygon(pt_list)
-        poly.draw(win)
+        new_line = g.Line(prev_pt, pt)
+        new_line.draw(win)
+        prev_pt = pt
+        g.update(framerate)
+    new_line = g.Line(prev_pt, pt_list[0])
+    new_line.draw(win)
     dft = DFT_Renderer(pt_list, dtheta, win)
     info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.")
     while True: #running FS animation attempt
         dft.undisplay()
         dft.update()
         dft.display()
-        g.update(30)
+        g.update(framerate)
         key = win.checkKey()
         if key == 'Up': dft.inc_terms()
         elif key == 'Down': dft.dec_terms()
