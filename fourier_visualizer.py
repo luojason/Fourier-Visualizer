@@ -189,14 +189,21 @@ if __name__ == '__main__':
     new_line = g.Line(prev_pt, pt_list[0])
     new_line.draw(win)
     dft = DFT_Renderer(pt_list, dtheta, win)
-    info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.")
+    info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.\n"
+                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
     while True: #running FS animation attempt
         dft.undisplay()
         dft.update()
         dft.display()
         g.update(framerate)
         key = win.checkKey()
-        if key == 'Up': dft.inc_terms()
-        elif key == 'Down': dft.dec_terms()
+        if key == 'Up':
+            dft.inc_terms()
+            info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.\n"
+                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
+        elif key == 'Down':
+            dft.dec_terms()
+            info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.\n"
+                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
         elif key == 'q': break
     win.close()
