@@ -4,7 +4,6 @@ import cmath
 
 #parameters to modify framerate, period of the function, etc
 dtheta = .01 #theta displacement, in radians
-sample_threshold = 200
 
 def c2p(c):
     """Creates a Point object corresponding to the given complex number."""
@@ -15,11 +14,12 @@ def p2c(p):
     return p.getX() + p.getY()*1j
 
 def interpolate_set(pt_list, threshold):
-    """Performs linear interpolation on a set to increase sample size to the given threshold."""
+    """Performs linear interpolation on a set to increase sample size to the given threshold.
+    Converts Point objects to complex numbers to ease in their manipulation."""
     sample_size = len(pt_list)
     assert sample_size > 0
     if sample_size >= threshold: return pt_list
-    upsample_factor = math.ceil(threshold/sample_size)
+    upsample_factor = math.floor(threshold/sample_size) #underestimate number of upsamples
     coord_list = []
     for i in range(sample_size):
         current_pt, next_pt = p2c(pt_list[i]), p2c(pt_list[(i + 1)%sample_size])
@@ -28,10 +28,44 @@ def interpolate_set(pt_list, threshold):
         for num_rep in range(upsample_factor - 1):
             current_pt += step
             coord_list.append(current_pt)
-    return [c2p(coord) for coord in coord_list]
+    while len(coord_list) < threshold: coord_list.append(coord_list[0])
+    return coord_list
+
+def next_pow_2(length):
+    """Returns the smaller power of 2 greater than or equal to the given number."""
+    counter = 0
+    pow_2 = 1
+    while(pow_2 < length):
+        counter += 1
+        if counter >= 30: raise ValueError('Input length is too large')
+        pow_2 *= 2
+    return pow_2
+
+def fft(pt_list, sample_threshold):
+    """Applies FFT algorithm on any list of sample points. O(nlogn) algorithm."""
+    next_p2 = next_pow_2(max(len(pt_list), sample_threshold))
+    upsampled_list = interpolate_set(pt_list, next_p2)
+    assert len(upsampled_list) == next_p2
+    return [x/next_p2 for x in fft_helper(upsampled_list, 0, 1, next_p2)]
+
+def fft_helper(pt_list, start, step, length):
+    """Recursively implements Cooley-Tukey's FFT algorithm on a power of 2 sample list of complex numbers."""
+    if length == 1: return [pt_list[start]]
+    next_length = math.floor(length/2)
+    evens = fft_helper(pt_list, start, step*2, next_length) #calculate even dft
+    odds = fft_helper(pt_list, start + step, step*2, next_length) #calculate odd dft
+    coeff = []
+    roots = []
+    for k in range(next_length):
+        root = cmath.exp(-2*cmath.pi*k*1j/length)
+        roots.append(root)
+        coeff.append(evens[k] + root*odds[k])
+    for k in range(next_length):
+        coeff.append(evens[k] - roots[k]*odds[k])
+    return coeff
 
 def dft_inefficient(pt_list):
-    """Calculates the discrete fourier transform on the list of samples.
+    """Calculates the discrete fourier transform on the list of sample complex numbers.
     Inefficient implementation; directly calculates from the formula. O(n^2) algorithm."""
     dft = []
     N = len(pt_list)
@@ -39,7 +73,7 @@ def dft_inefficient(pt_list):
         coeff = 0
         for n,x in enumerate(pt_list):
             root = cmath.exp(-2*cmath.pi*k*n*1j/N)
-            coeff += p2c(x)*root
+            coeff += x*root
         dft.append(coeff/N)
     return dft
 
@@ -54,6 +88,9 @@ class DFT_Renderer:
     circ_color = 'red'
     trail_length = 50
     res_step = 1 #number of terms to add to the series when inc is called
+
+    #dft calculation configuration options
+    sample_threshold = 1000
     
     def line_config(p1, p2):
         """Generates a Line object. Desired options are configurated in this method.
@@ -79,7 +116,7 @@ class DFT_Renderer:
         self.win = win
         #metadata initialization
         self.theta = 0
-        self.dft = dft_inefficient(pt_list)
+        self.dft = fft(pt_list, DFT_Renderer.sample_threshold)
         self.lines = []
         self.loc_pos = None
         self.loc_circles = None
@@ -146,8 +183,7 @@ if __name__ == '__main__':
         poly.undraw()
         poly = g.Polygon(pt_list)
         poly.draw(win)
-    upsampled_pts = interpolate_set(pt_list, sample_threshold)
-    dft = DFT_Renderer(upsampled_pts, dtheta, win)
+    dft = DFT_Renderer(pt_list, dtheta, win)
     info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.")
     while True: #running FS animation attempt
         dft.undisplay()
