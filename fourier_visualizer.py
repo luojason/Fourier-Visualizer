@@ -178,8 +178,9 @@ class DFT_Renderer:
         if self.dtheta > DFT_Renderer.theta_step: self.dtheta -= DFT_Renderer.theta_step
 
 def display_diag(text, dft):
-    text.setText("(up/down) = inc/decrease # terms being summed. (right/left) = inc/decrease speed. (q) to quit.\n"
-                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
+    text.setText('(up/down) = inc/decrease # terms being summed. (right/left) = inc/decrease speed. (q) to quit.\n'
+                 'Number of terms being added: {}\n'
+                 'Approximate period: {} seconds'.format(2*dft.num_vec - 1, 2*cmath.pi/(dft.dtheta*framerate)))
         
 
 if __name__ == '__main__':
