@@ -89,6 +89,7 @@ class DFT_Renderer:
     circ_color = 'red'
     trail_length = 50
     res_step = 1 #number of terms to add to the series when inc is called
+    theta_step = .01*2*cmath.pi/framerate #amount of dtheta to increase step by when inc is called
 
     #dft calculation configuration options
     sample_threshold = 1000
@@ -170,6 +171,17 @@ class DFT_Renderer:
     def dec_terms(self):
         if self.num_vec > DFT_Renderer.res_step: self.num_vec -= DFT_Renderer.res_step
 
+    def inc_freq(self):
+        self.dtheta += DFT_Renderer.theta_step
+
+    def dec_freq(self):
+        if self.dtheta > DFT_Renderer.theta_step: self.dtheta -= DFT_Renderer.theta_step
+
+def display_diag(text, dft):
+    text.setText("(up/down) = inc/decrease # terms being summed. (right/left) = inc/decrease speed. (q) to quit.\n"
+                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
+        
+
 if __name__ == '__main__':
     win = g.GraphWin('Fourier Series Visualizer', 800, 800, autoflush=False)
     win.setCoords(-500, -500, 500, 500)
@@ -189,21 +201,18 @@ if __name__ == '__main__':
     new_line = g.Line(prev_pt, pt_list[0])
     new_line.draw(win)
     dft = DFT_Renderer(pt_list, period, win)
-    info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.\n"
-                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
+    display_diag(info, dft)
     while True: #running FS animation attempt
         dft.undisplay()
         dft.update()
         dft.display()
         g.update(framerate)
         key = win.checkKey()
-        if key == 'Up':
-            dft.inc_terms()
-            info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.\n"
-                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
-        elif key == 'Down':
-            dft.dec_terms()
-            info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.\n"
-                 'Number of terms being added: {}'.format(2*dft.num_vec - 1))
-        elif key == 'q': break
+        if key != '':
+            if key == 'Up': dft.inc_terms()
+            elif key == 'Down': dft.dec_terms()
+            elif key == 'Right': dft.inc_freq()
+            elif key == 'Left': dft.dec_freq()
+            elif key == 'q': break
+            display_diag(info, dft)
     win.close()
