@@ -4,7 +4,7 @@ import cmath
 
 #parameters to modify framerate, period of the function, etc
 framerate = 60
-dtheta = .01 #theta displacement, in radians
+period = 10 #time per sample, in seconds
 
 def c2p(c):
     """Creates a Point object corresponding to the given complex number."""
@@ -111,9 +111,9 @@ class DFT_Renderer:
             circ.setFill(DFT_Renderer.circ_color)
         return circles
     
-    def __init__(self, pt_list, dtheta, win):
+    def __init__(self, pt_list, period, win):
         assert len(pt_list) > 0
-        self.dtheta = dtheta
+        self.dtheta = 2*cmath.pi/(period*framerate)
         self.win = win
         #metadata initialization
         self.theta = 0
@@ -188,7 +188,7 @@ if __name__ == '__main__':
         g.update(framerate)
     new_line = g.Line(prev_pt, pt_list[0])
     new_line.draw(win)
-    dft = DFT_Renderer(pt_list, dtheta, win)
+    dft = DFT_Renderer(pt_list, period, win)
     info.setText("Press ' up' or ' down' to increase/decrease the number of terms in the series. Press ' q' to quit.\n"
                  'Number of terms being added: {}'.format(2*dft.num_vec - 1))
     while True: #running FS animation attempt
